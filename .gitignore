@@ -1,0 +1,20 @@
+# === Mod 資料（使用者自行放置，不上傳） ===
+MODS/
+MODS_MERGED/
+
+# === 使用者設定檔（執行工具後自動產生） ===
+ModComparisonTools/mod_selections.json
+ModComparisonTools/mod_history.json
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+
+# === OS ===
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# === AI generated files ===
+AGENTS.md

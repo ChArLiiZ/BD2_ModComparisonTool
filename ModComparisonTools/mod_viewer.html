@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brown Dust 2 - Mod Viewer (Night Mode)</title>
+    <script src="/ModComparisonTools/vendor/spine-player.js"></script>
+    <link rel="stylesheet" href="/ModComparisonTools/vendor/spine-player.css">
+    <style>
+        :root {
+            --bg-core: #000000;
+            --bg-sidebar: #0a0a0a;
+            --bg-panel: #111111;
+            --bg-input: #1a1a1a;
+            --bg-hover: #222222;
+            --border: #333333;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent: #ffffff;
+            --danger: #cc3333;
+            --warning: #cc8800;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-core);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-core); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 13px;
+        }
+        .search-box input:focus { border-color: var(--accent); }
+
+        .filters {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--bg-panel);
+        }
+
+        .filter-select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 100%;
+            outline: none;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .checkbox-wrapper input { accent-color: var(--accent); }
+        .checkbox-wrapper:hover { color: var(--text-main); }
+
+        .actions {
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-panel);
+            align-items: center;
+        }
+
+        .btn-mini {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 600;
+        }
+        .btn-mini:hover { background: var(--bg-hover); color: var(--text-main); border-color: var(--accent); }
+        .btn-mini.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        .mod-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .mod-item {
+            padding: 12px;
+            cursor: pointer;
+            background: var(--bg-panel);
+            margin-bottom: 5px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .mod-item:hover { background: var(--bg-hover); }
+        .mod-item.active { 
+            background: var(--bg-hover); 
+            border-color: var(--accent);
+        }
+        .mod-item.has-selection { 
+            border-right: 3px solid var(--warning); 
+            background: #1a1a0f; /* Subtle highlight for selected items */
+        }
+        .mod-item.has-selection .mod-id { color: var(--accent); }
+        
+        .mod-info-col { overflow: hidden; flex: 1; }
+        .mod-id { 
+            font-size: 13px; 
+            font-family: monospace;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+        .mod-versions { font-size: 11px; color: var(--text-muted); }
+        .mod-batch-check { width: 14px; height: 14px; accent-color: var(--accent); }
+
+        .tag-new {
+            background: #28a745;
+            color: white;
+            font-size: 9px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        .tag-updated {
+            background: #17a2b8;
+            color: white;
+            font-size: 9px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        /* Main Area */
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-core);
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            padding: 0 20px;
+            height: 50px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-core);
+            z-index: 20;
+        }
+        .header h1 { font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 1px; }
+        .current-mod-display { font-size: 16px; font-weight: 700; color: var(--text-main); font-family: monospace; }
+
+        /* Spine Viewer (Hero) */
+        .viewer-hero {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle at center, #111 0%, #000 70%);
+        }
+
+        .spine-player-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            position: relative;
+        }
+        
+        #spinePlayer, #spinePlayerB { 
+            flex: 1; 
+            width: 100%; 
+            height: 100%; 
+            min-width: 0;
+        }
+        
+        #compareDivider {
+            width: 1px;
+            background: #444;
+            display: none;
+            z-index: 50;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 2px solid #333;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Control Bar (Bottom) */
+        .controls-container {
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-bar {
+            padding: 8px 20px;
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            align-items: center;
+            min-height: 50px;
+            overflow: hidden;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .control-group .info-text {
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .group-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-right: 5px;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-hover); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn.active { background: var(--accent); color: black; border-color: var(--accent); }
+        .btn.primary { background: var(--text-main); color: black; border-color: var(--text-main); font-weight: 700; }
+        .btn.primary:hover { background: #ddd; }
+
+        .select-input {
+            background: var(--bg-core);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            min-width: 120px;
+            height: 32px;
+        }
+        .select-input:focus { border-color: var(--accent); }
+
+        .info-text { font-size: 13px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Dynamic Classes injected by JS */
+        .version-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 32px;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .version-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--accent); }
+        .version-btn.active { background: var(--accent); color: black; border-color: var(--accent); font-weight: bold; }
+        .version-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Specific ID Styling overrides */
+        #errorMessage {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #cc3333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .status-indicator { font-size: 12px; color: var(--text-muted); margin-right: 10px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .status-indicator.selected { color: var(--accent); }
+        
+        .compare-toggle-label {
+            font-size: 12px; 
+            cursor: pointer; 
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            user-select: none;
+        }
+        .compare-toggle-label.active {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search Mod ID...">
+            </div>
+        </div>
+        <div class="filters">
+            <select id="authorFilter" class="filter-select">
+                <option value="">All Authors</option>
+            </select>
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="selectedOnly">
+                <span>Selected Only</span>
+            </label>
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="newOnly">
+                <span>New/Updated Only</span>
+            </label>
+        </div>
+        <div class="actions">
+            <button id="clearAllSelectionsBtn" class="btn-mini danger">Reset All</button>
+            <button id="markAllReadBtn" class="btn-mini">Mark All Read</button>
+            <button id="clearSelectedBtn" class="btn-mini">Clear Checked</button>
+            <div style="font-size: 10px; color: #666; display: flex; align-items: center;">
+                SEL: <span id="selectedCount" style="margin-left: 4px; color: #fff;">0</span>
+            </div>
+        </div>
+        <div class="mod-list" id="modList">
+            <!-- Mod Items Injected Here -->
+        </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+        <!-- Top Header -->
+        <div class="header">
+            <h1>MOD VIEWER</h1>
+            <div id="currentModInfo" class="current-mod-display">SELECT MOD</div>
+            <div style="width: 100px;"></div> <!-- Spacer -->
+        </div>
+
+        <!-- Hero: Spine Player -->
+        <div class="viewer-hero">
+            <div id="loading" class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+            <div id="errorMessage"></div>
+
+            <div class="spine-player-wrapper">
+                <div id="spinePlayer"></div>
+                <div id="compareDivider"></div>
+                <div id="spinePlayerB" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="controls-container">
+            <div class="control-bar">
+                <!-- Group 1: Version Control -->
+                <div class="control-group">
+                    <span class="group-label">VERSION</span>
+                    <button class="btn" id="prevBtn" onclick="previousVersion()" title="Previous (Left Arrow)">←</button>
+                    <span id="versionInfo" class="info-text" style="min-width: 60px; text-align: center;">-</span>
+                    <button class="btn" id="nextBtn" onclick="nextVersion()" title="Next (Right Arrow)">→</button>
+                    <div id="versionButtons" style="display: flex; gap: 4px;"></div>
+                </div>
+
+                <!-- Group 2: Animation -->
+                <div class="control-group">
+                    <span class="group-label">ANIM</span>
+                    <select id="animationSelect" class="select-input" disabled></select>
+                    <span id="animationCount" style="font-size: 10px; color: #666; min-width: 20px; text-align: center;">0</span>
+                    <button id="playPauseBtn" class="btn" disabled>Pause</button>
+                    <button id="resetCameraBtn" class="btn" disabled>Reset Cam</button>
+                </div>
+                
+                <!-- Group 3: Selection (Right Aligned) -->
+                <div class="control-group" style="margin-left: auto;">
+                    <span id="currentSelectionStatus" class="status-indicator">Default</span>
+                    <button id="toggleSelectionBtn" class="btn primary">Select (Enter)</button>
+                    <button id="clearCurrentSelectionBtn" class="btn">Clear</button>
+                </div>
+            </div>
+            
+            <!-- Compare Bar (Compact) -->
+            <div class="control-bar" style="border-top: 1px solid #1a1a1a; background: #0e0e0e; padding-top: 4px; padding-bottom: 4px; min-height: 40px;">
+                <div class="control-group">
+                    <span class="group-label">COMPARE</span>
+                    <input type="checkbox" id="compareToggle" style="display: none;">
+                    <label for="compareToggle" id="compareModeBtn" class="compare-toggle-label">Enable Compare Mode</label>
+                    
+                    <div style="width: 1px; height: 20px; background: #333; margin: 0 10px;"></div>
+
+                    <select id="compareVersionSelect" class="select-input" disabled style="height: 28px;"></select>
+                    <button id="comparePrevBtn" class="btn" disabled style="height: 28px;">←</button>
+                    <button id="compareNextBtn" class="btn" disabled style="height: 28px;">→</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = null;
+        let currentModId = null;
+        let currentVersionIndex = 0;
+        let currentCompareIndex = 0;
+        let spinePlayer = null;
+        let spinePlayerB = null;
+        let compareEnabled = false;
+        let glTexturePatched = false;
+        let manualCamera = null;
+        let manualCameraB = null;
+        let cachedViewport = null;
+        let cachedViewportB = null;
+        let animationList = [];
+        let animationListB = [];
+        let isPlaying = true;
+        let isPlayingB = true;
+        let modSelections = {};
+        let modAnimationSelections = {};
+        let pendingApply = false;
+        let compareLoadToken = 0;
+        const disposedPlayers = new WeakSet();
+        const dragState = {
+            active: false,
+            target: 'A',
+            startX: 0,
+            startY: 0,
+            cameraX: 0,
+            cameraY: 0,
+        };
+
+
+        // 載入配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/mods_index.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} when loading config`);
+                }
+                config = await response.json();
+                populateAuthorFilter(config.authors || []);
+                renderModList(config.mods || []);
+                updateModListSelectionIndicators();
+            } catch (error) {
+                showError('無法載入配置檔: ' + error.message);
+            }
+        }
+
+        function patchPremultipliedAlpha() {
+            if (glTexturePatched || !window.spine?.GLTexture) return;
+            const originalUpdate = window.spine.GLTexture.prototype.update;
+            window.spine.GLTexture.prototype.update = function(useMipMaps) {
+                const gl = this.context.gl;
+                gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+                originalUpdate.call(this, useMipMaps);
+            };
+            glTexturePatched = true;
+        }
+
+        function applyPlayerBackgroundTransparency(target) {
+            const instance = target || spinePlayer;
+            if (!instance) return;
+            if (instance.config) {
+                instance.config.backgroundColor = '00000000';
+            }
+            if (instance.bg && typeof instance.bg.setFromString === 'function') {
+                instance.bg.setFromString('00000000');
+            }
+            if (instance.dom) {
+                instance.dom.style.backgroundColor = 'transparent';
+            }
+            if (instance.canvas) {
+                instance.canvas.style.backgroundColor = 'transparent';
+            }
+        }
+
+        function safeDisposePlayer(player) {
+            if (!player || typeof player.dispose !== 'function') return;
+            if (disposedPlayers.has(player)) return;
+            disposedPlayers.add(player);
+            try {
+                if (typeof player.pause === 'function') {
+                    player.pause();
+                }
+                player.dispose();
+            } catch (error) {
+                // Avoid noisy console errors for double-dispose or DOM detach races
+                console.warn('dispose failed', error);
+            }
+        }
+
+        function isBackgroundSlot(name) {
+            const normalized = name.toLowerCase();
+            return (
+                normalized.startsWith('bg') ||
+                normalized.startsWith('bk') ||
+                normalized.includes(' bg') ||
+                normalized.includes('_bg') ||
+                normalized.includes('background')
+            );
+        }
+
+        function computeTrimmedBounds(skeleton) {
+            if (!skeleton) return null;
+            let minX = Number.POSITIVE_INFINITY;
+            let minY = Number.POSITIVE_INFINITY;
+            let maxX = Number.NEGATIVE_INFINITY;
+            let maxY = Number.NEGATIVE_INFINITY;
+            let found = false;
+
+            for (const slot of skeleton.drawOrder) {
+                const slotName = slot.data.name;
+                if (isBackgroundSlot(slotName)) continue;
+
+                const attachment = slot.getAttachment();
+                if (!attachment || typeof attachment.computeWorldVertices !== 'function') continue;
+                const vertexCount = attachment.worldVerticesLength || 0;
+                if (!vertexCount) continue;
+
+                const worldVertices = new Float32Array(vertexCount);
+                try {
+                    attachment.computeWorldVertices(slot, 0, vertexCount, worldVertices, 0, 2);
+                } catch {
+                    continue;
+                }
+
+                for (let i = 0; i < worldVertices.length; i += 2) {
+                    const x = worldVertices[i];
+                    const y = worldVertices[i + 1];
+                    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                    found = true;
+                }
+            }
+
+            if (!found) return null;
+            const width = maxX - minX;
+            const height = maxY - minY;
+            if (width <= 0 || height <= 0) return null;
+            const padding = 50;
+
+            return {
+                offset: new spine.Vector2(minX - padding, minY - padding),
+                size: new spine.Vector2(width + padding * 2, height + padding * 2),
+            };
+        }
+
+        function computeCameraBounds(skeleton) {
+            if (!skeleton) {
+                return { offset: new spine.Vector2(), size: new spine.Vector2() };
+            }
+
+            const fallbackOffset = new spine.Vector2();
+            const fallbackSize = new spine.Vector2();
+            skeleton.getBounds(fallbackOffset, fallbackSize);
+
+            const trimmed = computeTrimmedBounds(skeleton);
+            if (trimmed) {
+                const trimmedWidth = trimmed.size.x;
+                const trimmedHeight = trimmed.size.y;
+                const fallbackWidth = fallbackSize.x;
+                const fallbackHeight = fallbackSize.y;
+                const widthRatio = fallbackWidth / Math.max(trimmedWidth, 1);
+                const heightRatio = fallbackHeight / Math.max(trimmedHeight, 1);
+                const trimmedIsMeaningful =
+                    Number.isFinite(trimmedWidth) &&
+                    Number.isFinite(trimmedHeight) &&
+                    trimmedWidth > 0 &&
+                    trimmedHeight > 0;
+                if (trimmedIsMeaningful && (widthRatio > 10 || heightRatio > 10)) {
+                    return trimmed;
+                }
+            }
+
+            return { offset: fallbackOffset, size: fallbackSize };
+        }
+
+        function isBoundsReasonable(result) {
+            if (!result) return false;
+            const width = result.size.x;
+            const height = result.size.y;
+            return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 && width < 50000 && height < 50000;
+        }
+
+        function applySkinAndMeasure(skeleton, skinName) {
+            if (!skeleton || !skinName) return null;
+            skeleton.setSkinByName(skinName);
+            skeleton.setSlotsToSetupPose();
+            skeleton.updateWorldTransform();
+            return computeCameraBounds(skeleton);
+        }
+
+        function updateViewportFromBounds(player, bounds, options = { target: 'A' }) {
+            const offset = bounds.offset;
+            const size = bounds.size;
+            const centerX = offset.x + size.x / 2;
+            const centerY = offset.y + size.y / 2;
+
+            const viewport = {
+                x: offset.x,
+                y: offset.y,
+                width: Math.max(size.x, 1),
+                height: Math.max(size.y, 1),
+                padLeft: 0,
+                padRight: 0,
+                padTop: 50,
+                padBottom: 50,
+                transitionTime: 0,
+                animations: {},
+            };
+
+            if (player && player.config) {
+                player.config.viewport = viewport;
+            }
+
+            const camera = new spine.OrthoCamera(
+                player.sceneRenderer.camera.viewportWidth,
+                player.sceneRenderer.camera.viewportHeight
+            );
+            camera.position.x = centerX;
+            camera.position.y = centerY;
+
+            const paddedWidth = Math.max(size.x, 1);
+            const paddedHeight = Math.max(size.y + 100, 1);
+            const canvas = player.canvas;
+            const canvasAspect = canvas.height / canvas.width;
+            const viewportAspect = paddedHeight / paddedWidth;
+            camera.zoom = canvasAspect > viewportAspect
+                ? paddedWidth / canvas.width
+                : paddedHeight / canvas.height;
+            camera.update();
+
+            if (options.target === 'B') {
+                cachedViewportB = viewport;
+                manualCameraB = camera;
+            } else {
+                cachedViewport = viewport;
+                manualCamera = camera;
+            }
+
+            if (player.canvas) {
+                if (options.target === 'A') {
+                    player.canvas.dataset.cameraTarget = 'A';
+                } else if (options.target === 'B') {
+                    player.canvas.dataset.cameraTarget = 'B';
+                }
+                bindCameraSyncHandlers();
+            }
+        }
+
+        function bindCameraSyncHandlers() {
+            if (dragState.bound) return;
+            dragState.bound = true;
+
+            const wheelZoomIntensity = 0.01;
+            const wheelZoomSmoothing = 0.15;
+            const zoomMin = 0.02;
+            const zoomMax = 10;
+
+            const applyZoomToBoth = (baseZoom, deltaY) => {
+                const targetZoom = Math.min(
+                    zoomMax,
+                    Math.max(zoomMin, baseZoom * Math.exp(deltaY * wheelZoomIntensity))
+                );
+                const nextZoom = baseZoom + (targetZoom - baseZoom) * wheelZoomSmoothing;
+
+                if (manualCamera) {
+                    manualCamera.zoom = nextZoom;
+                    manualCamera.update();
+                }
+                if (compareEnabled && manualCameraB) {
+                    manualCameraB.zoom = nextZoom;
+                    manualCameraB.update();
+                }
+            };
+
+            const getCanvasTarget = (event) => {
+                const target = event.target;
+                const canvas = target && target.closest ? target.closest('canvas') : null;
+                if (!canvas) return null;
+                return canvas.dataset.cameraTarget === 'B' ? 'B' : 'A';
+            };
+
+            const onPointerDown = (event) => {
+                const targetId = getCanvasTarget(event);
+                if (!targetId) return;
+                dragState.active = true;
+                dragState.target = targetId;
+                dragState.startX = event.clientX;
+                dragState.startY = event.clientY;
+
+                const cam = targetId === 'B' ? manualCameraB : manualCamera;
+                if (!cam) return;
+                dragState.cameraX = cam.position.x;
+                dragState.cameraY = cam.position.y;
+            };
+
+            const onPointerMove = (event) => {
+                if (!dragState.active) return;
+                const cam = dragState.target === 'B' ? manualCameraB : manualCamera;
+                if (!cam) return;
+
+                const canvas = dragState.target === 'B'
+                    ? document.querySelector('#spinePlayerB canvas')
+                    : document.querySelector('#spinePlayer canvas');
+                if (!canvas) return;
+
+                const dx = event.clientX - dragState.startX;
+                const dy = event.clientY - dragState.startY;
+
+                const originWorld = cam.screenToWorld(new spine.Vector3(0, 0), canvas.clientWidth, canvas.clientHeight);
+                const deltaWorld = cam.screenToWorld(new spine.Vector3(dx, dy), canvas.clientWidth, canvas.clientHeight).sub(originWorld);
+
+                const nextX = dragState.cameraX - deltaWorld.x;
+                const nextY = dragState.cameraY - deltaWorld.y;
+
+                if (manualCamera) {
+                    manualCamera.position.x = nextX;
+                    manualCamera.position.y = nextY;
+                    manualCamera.update();
+                }
+                if (compareEnabled && manualCameraB) {
+                    manualCameraB.position.x = nextX;
+                    manualCameraB.position.y = nextY;
+                    manualCameraB.update();
+                }
+            };
+
+            const onPointerUp = () => {
+                dragState.active = false;
+            };
+
+            const onWheel = (event) => {
+                const targetId = getCanvasTarget(event);
+                if (!targetId) return;
+                const baseZoom = targetId === 'B'
+                    ? (manualCameraB?.zoom ?? manualCamera?.zoom)
+                    : (manualCamera?.zoom ?? manualCameraB?.zoom);
+
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') {
+                    event.stopImmediatePropagation();
+                }
+
+                applyZoomToBoth(baseZoom ?? 1, event.deltaY);
+            };
+
+            document.addEventListener('pointerdown', onPointerDown, true);
+            document.addEventListener('pointermove', onPointerMove, true);
+            document.addEventListener('pointerup', onPointerUp, true);
+            document.addEventListener('pointercancel', onPointerUp, true);
+            document.addEventListener('wheel', onWheel, { passive: false, capture: true });
+        }
+
+        function resolveSpineUrls(version) {
+            const atlasUrl = version.atlas ? `/${version.atlas}` : null;
+            if (version.json) {
+                return { atlasUrl, jsonUrl: `/${version.json}` };
+            }
+            if (version.skel) {
+                return { atlasUrl, binaryUrl: `/${version.skel}` };
+            }
+            return { atlasUrl, jsonUrl: null, binaryUrl: null };
+        }
+
+        // 渲染圖片類型 Mod
+        function renderImageMod(container, version) {
+            const pngs = version.pngs || [];
+            if (pngs.length === 0) {
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
+                        <div style="font-size:16px; margin-bottom:10px;">📷 圖片類型 Mod</div>
+                        <div style="font-size:12px;">未找到圖片檔案</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 顯示圖片（支援多張圖片）
+            const imageHtml = pngs.map((png, index) => `
+                <div style="margin: 10px; text-align: center;">
+                    <img src="/${png}" 
+                         style="max-width: 100%; max-height: ${pngs.length > 1 ? '45vh' : '85vh'}; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"
+                         alt="Mod Image ${index + 1}"
+                         loading="lazy">
+                    ${pngs.length > 1 ? `<div style="color: #888; font-size: 11px; margin-top: 5px;">${png.split('/').pop()}</div>` : ''}
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; overflow:auto; padding:20px;">
+                    <div style="color:#666; font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">📷 圖片類型 Mod (${pngs.length} 張)</div>
+                    <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px;">
+                        ${imageHtml}
+                    </div>
+                </div>
+            `;
+            
+            // 禁用動畫相關控制
+            setAnimationOptions(false);
+        }
+
+
+        // 顯示錯誤
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            hideLoading();
+        }
+
+        // 顯示/隱藏載入中
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        async function loadSelections() {
+            try {
+                const response = await fetch('/mod_selections.json');
+                if (!response.ok) {
+                    modSelections = {};
+                    return;
+                }
+                const data = await response.json();
+                const raw = data.selections || {};
+            const normalized = {};
+            Object.entries(raw).forEach(([key, value]) => {
+                if (value && typeof value === 'object') {
+                    normalized[key] = value;
+                } else if (value) {
+                    normalized[key] = { versionId: value };
+                }
+            });
+            modSelections = normalized;
+            } catch {
+                modSelections = {};
+            }
+        }
+
+        async function saveSelections() {
+            const payload = {
+                selections: modSelections,
+                updatedAt: new Date().toISOString(),
+            };
+            try {
+                const response = await fetch('/apply_selections', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!response.ok) {
+                    console.error('apply_selections failed', response.status);
+                    showError('儲存失敗: 無法寫入選擇');
+                } else {
+                    console.log('apply_selections ok', payload);
+                }
+            } catch (error) {
+                console.error('apply_selections error', error);
+                showError('儲存失敗: 連線錯誤');
+            }
+        }
+
+        function getSelection(modId) {
+            // Use lowercase for consistent key matching
+            const key = modId ? modId.toLowerCase() : null;
+            return key ? (modSelections[key] || null) : null;
+        }
+
+        function getSelectionValue(selection) {
+            if (!selection) return null;
+            if (typeof selection === 'object') {
+                return selection.versionId || null;
+            }
+            return selection;
+        }
+
+        function setAnimationOptions(enabled) {
+            const select = document.getElementById('animationSelect');
+            const countEl = document.getElementById('animationCount');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const resetBtn = document.getElementById('resetCameraBtn');
+            if (!select || !countEl || !playPauseBtn || !resetBtn) return;
+
+            select.disabled = !enabled;
+            playPauseBtn.disabled = !enabled;
+            resetBtn.disabled = !enabled;
+            countEl.textContent = enabled ? animationList.length.toString() : '0';
+        }
+
+        function getStoredAnimation(modId) {
+            if (!modId) return null;
+            return modAnimationSelections[modId] || null;
+        }
+
+        function setStoredAnimation(modId, animationName) {
+            if (!modId || !animationName) return;
+            modAnimationSelections[modId] = animationName;
+        }
+
+        function renderAnimationOptions(names) {
+            const select = document.getElementById('animationSelect');
+            if (!select) return;
+            select.innerHTML = '';
+
+            if (!names.length) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '無動畫';
+                select.appendChild(option);
+                return;
+            }
+
+            names.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        }
+
+        function setSelection(modId, selectionData) {
+            if (!modId) return;
+            // Use lowercase for consistent key matching
+            const key = modId.toLowerCase();
+            if (selectionData) {
+                modSelections[key] = selectionData;
+            } else {
+                delete modSelections[key];
+            }
+            updateSelectionStatus();
+            updateModListSelectionIndicators();
+            markPendingApply();
+            saveSelections();
+            console.log('selection saved', { modId: key, selectionData });
+        }
+
+        function updateSelectionStatus() {
+            const statusEl = document.getElementById('currentSelectionStatus');
+            const toggleBtn = document.getElementById('toggleSelectionBtn');
+            if (!statusEl || !toggleBtn || !currentModId || !config) return;
+
+            const mod = config.mods.find(m => m.id === currentModId);
+            const version = mod?.versions?.[currentVersionIndex];
+            if (!mod || !version) return;
+
+            const versionId = version.versionId || version.author;
+            const selectedVersion = getSelection(mod.id);
+            const label = version.authorLabel || version.author;
+            const selectionLabel = selectedVersion && typeof selectedVersion === 'object'
+                ? selectedVersion.label || selectedVersion.versionId || selectedVersion.author || ''
+                : selectedVersion;
+
+            const isSelected = selectedVersion && typeof selectedVersion === 'object'
+                ? selectedVersion.versionId === versionId
+                : selectedVersion === versionId;
+
+            if (isSelected) {
+                statusEl.textContent = `已選用: ${label}`;
+                statusEl.classList.add('selected');
+                toggleBtn.textContent = '取消選用 (Enter)';
+                toggleBtn.classList.add('active');
+            } else if (selectedVersion) {
+                statusEl.textContent = `已選用: ${selectionLabel}`;
+                statusEl.classList.remove('selected');
+                toggleBtn.textContent = `選用此版本 (${label}) (Enter)`;
+                toggleBtn.classList.remove('active');
+            } else {
+                statusEl.textContent = '未選用 (預設)';
+                statusEl.classList.remove('selected');
+                toggleBtn.textContent = `選用此版本 (${label}) (Enter)`;
+                toggleBtn.classList.remove('active');
+            }
+        }
+
+        function shouldIgnoreShortcutTarget(target) {
+            if (!target) return false;
+            if (target.isContentEditable) return true;
+            const tag = target.tagName ? target.tagName.toLowerCase() : '';
+            // Only ignore text inputs/textareas so typing works.
+            // We do NOT ignore 'select' anymore, so Up/Down always works for Animation
+            // even if a dropdown is focused.
+            return tag === 'input' || tag === 'textarea';
+        }
+
+        function changeAnimationByStep(step) {
+            if (!animationList.length) return;
+            const select = document.getElementById('animationSelect');
+            if (!select || select.disabled) return;
+
+            const currentName = select.value || animationList[0];
+            let currentIndex = animationList.indexOf(currentName);
+            if (currentIndex < 0) currentIndex = 0;
+
+            const nextIndex = (currentIndex + step + animationList.length) % animationList.length;
+            const nextName = animationList[nextIndex];
+            if (!nextName) return;
+
+            select.value = nextName;
+            if (spinePlayer) {
+                setSpineAnimation(spinePlayer, nextName, { loop: true });
+            }
+            if (compareEnabled && spinePlayerB) {
+                setSpineAnimation(spinePlayerB, nextName, { loop: true }, true);
+            }
+        }
+
+        function handleShortcutKey(event) {
+            if (event.defaultPrevented) return;
+            if (event.ctrlKey || event.altKey || event.metaKey) return;
+            if (shouldIgnoreShortcutTarget(event.target)) return;
+            if (!currentModId || !config) return;
+
+            switch (event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    previousVersion();
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    nextVersion();
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    changeAnimationByStep(-1);
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    changeAnimationByStep(1);
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    document.getElementById('toggleSelectionBtn')?.click();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        function setSpineAnimation(player, animationName, options = { loop: true }, optionsB = false) {
+            const state = player?.animationState;
+            if (!state || !animationName) return;
+            state.clearTrack(1);
+            const entry = state.setAnimation(0, animationName, options.loop);
+            if (entry) {
+                entry.mixDuration = 0;
+                entry.mixTime = 0;
+            }
+            player.play();
+            if (optionsB) {
+                isPlayingB = true;
+                updatePlayPauseButton();
+            } else {
+                isPlaying = true;
+                updatePlayPauseButton();
+                if (currentModId) {
+                    setStoredAnimation(currentModId, animationName);
+                }
+            }
+        }
+
+        function updatePlayPauseButton() {
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            if (!playPauseBtn) return;
+            playPauseBtn.textContent = isPlaying ? '暫停' : '播放';
+        }
+
+        function updateCompareUIState() {
+            const divider = document.getElementById('compareDivider');
+            const playerB = document.getElementById('spinePlayerB');
+            const toggle = document.getElementById('compareModeBtn');
+            if (divider) divider.style.display = compareEnabled ? 'block' : 'none';
+            if (playerB) playerB.style.display = compareEnabled ? 'block' : 'none';
+            if (!compareEnabled && playerB) {
+                playerB.innerHTML = '';
+            }
+            if (toggle) {
+                toggle.classList.toggle('active', compareEnabled);
+                toggle.textContent = compareEnabled
+                    ? '關閉比對模式 (Compare Mode)'
+                    : '開啟比對模式 (Compare Mode)';
+            }
+        }
+
+
+        function updateSelectedCount() {
+            const countEl = document.getElementById('selectedCount');
+            if (!countEl) return;
+            countEl.textContent = Object.keys(modSelections).length.toString();
+        }
+
+        function markPendingApply() {
+            pendingApply = true;
+        }
+
+        function updateApplyButtonState() {
+            return;
+        }
+
+        function updateModListSelectionIndicators() {
+            const items = document.querySelectorAll('.mod-item');
+            items.forEach(item => {
+                const modId = item.getAttribute('data-mod-id');
+                if (!modId) return;
+
+                const selection = getSelection(modId);
+                const infoCol = item.querySelector('.mod-info-col');
+
+                // Remove existing selection badge if any
+                const existingBadge = item.querySelector('.selection-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (selection) {
+                    item.classList.add('has-selection');
+                    const selectionLabel = typeof selection === 'object'
+                        ? selection.label || selection.versionId || selection.author || 'Selected'
+                        : 'Selected';
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'selection-badge';
+                    badge.style.fontSize = '10px';
+                    badge.style.color = 'var(--warning)';
+                    badge.style.marginTop = '2px';
+                    badge.textContent = `★ ${selectionLabel}`;
+                    
+                    if (infoCol) {
+                        infoCol.appendChild(badge);
+                    }
+                } else {
+                    item.classList.remove('has-selection');
+                }
+            });
+            updateSelectedCount();
+        }
+
+
+
+        // 渲染 Mod 列表
+        function renderModList(mods) {
+            const modList = document.getElementById('modList');
+            modList.innerHTML = '';
+
+            mods.forEach(mod => {
+                const item = document.createElement('div');
+                item.className = 'mod-item';
+                item.setAttribute('data-mod-id', mod.id);
+                item.onclick = () => selectMod(mod.id);
+
+                const authors = mod.versions.map(v => v.authorLabel || v.author).join(', ');
+                
+                let badges = '';
+                if (mod.isNew) {
+                    badges += '<span class="tag-new">NEW</span>';
+                }
+                if (mod.isUpdated) {
+                    badges += '<span class="tag-updated">UPD</span>';
+                }
+
+                item.innerHTML = `
+                    <input type="checkbox" class="mod-batch-check" data-mod-id="${mod.id}" onclick="event.stopPropagation()">
+                    <div class="mod-info-col">
+                        <div class="mod-id">${mod.id}${badges}</div>
+                        <div class="mod-versions">${mod.versions.length} versions: ${authors}</div>
+                    </div>
+                `;
+
+
+                modList.appendChild(item);
+            });
+
+            updateModListSelectionIndicators();
+        }
+
+
+        // 選擇 Mod
+        function selectMod(modId) {
+            currentModId = modId;
+            currentVersionIndex = 0;
+            currentCompareIndex = 0;
+
+            const mod = config?.mods?.find(m => m.id === modId);
+            if (mod) {
+                const selection = getSelection(modId);
+                const selectedVersionId = selection && typeof selection === 'object'
+                    ? selection.versionId
+                    : selection;
+
+                if (selectedVersionId) {
+                    const selectedIndex = mod.versions.findIndex(v => (v.versionId || v.author) === selectedVersionId);
+                    if (selectedIndex >= 0) {
+                        currentVersionIndex = selectedIndex;
+                    }
+                }
+            }
+
+            // 更新列表選中狀態
+            document.querySelectorAll('.mod-item').forEach((item, index) => {
+                if (config.mods[index].id === modId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            updateUI();
+            updateSelectionStatus();
+            loadCurrentVersion();
+            if (compareEnabled) {
+                const activeMod = config?.mods?.find(m => m.id === currentModId);
+                if (activeMod) {
+                    loadCompareVersion(activeMod);
+                }
+            }
+        }
+
+        // 更新 UI
+        function updateUI() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod) return;
+
+            document.getElementById('currentModInfo').textContent = mod.id;
+
+            const version = mod.versions[currentVersionIndex];
+            document.getElementById('versionInfo').textContent =
+                `${version.authorLabel || version.author} (${currentVersionIndex + 1}/${mod.versions.length})`;
+
+            // 更新版本按鈕
+            const versionButtons = document.getElementById('versionButtons');
+            versionButtons.innerHTML = '';
+
+            mod.versions.forEach((v, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'version-btn' + (index === currentVersionIndex ? ' active' : '');
+                btn.textContent = v.authorLabel || v.author;
+                btn.onclick = () => {
+                    currentVersionIndex = index;
+                    updateUI();
+                    updateSelectionStatus();
+                    loadCurrentVersion();
+                };
+                versionButtons.appendChild(btn);
+            });
+
+            updateSelectionStatus();
+
+            const compareSelect = document.getElementById('compareVersionSelect');
+            const comparePrevBtn = document.getElementById('comparePrevBtn');
+            const compareNextBtn = document.getElementById('compareNextBtn');
+            if (compareSelect) {
+                compareSelect.innerHTML = '';
+                mod.versions.forEach((v, index) => {
+                    const option = document.createElement('option');
+                    option.value = index.toString();
+                    option.textContent = v.authorLabel || v.author;
+                    compareSelect.appendChild(option);
+                });
+                compareSelect.value = currentCompareIndex.toString();
+            }
+            const canCompare = mod.versions.length > 1;
+            if (comparePrevBtn) comparePrevBtn.disabled = !canCompare || !compareEnabled;
+            if (compareNextBtn) compareNextBtn.disabled = !canCompare || !compareEnabled;
+            if (compareSelect) compareSelect.disabled = !compareEnabled || !canCompare;
+
+            // 更新上/下一個按鈕
+            document.getElementById('prevBtn').disabled = mod.versions.length <= 1;
+            document.getElementById('nextBtn').disabled = mod.versions.length <= 1;
+        }
+
+
+        // 載入當前版本
+        async function loadCurrentVersion() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod) return;
+
+            const version = mod.versions[currentVersionIndex];
+
+            showLoading();
+            document.getElementById('errorMessage').style.display = 'none';
+            setAnimationOptions(false);
+
+            try {
+                // 清除舊的 player
+                if (spinePlayer) {
+                    safeDisposePlayer(spinePlayer);
+                    const container = document.getElementById('spinePlayer');
+                    container.innerHTML = '';
+                }
+
+                // 創建新的 Spine Player（路徑已經是從伺服器根目錄開始）
+                const container = document.getElementById('spinePlayer');
+                container.innerHTML = '';
+
+                patchPremultipliedAlpha();
+
+            // 檢查是否為圖片類型 Mod
+            if (version.modType === 'image') {
+                renderImageMod(container, version);
+                hideLoading();
+                updateSelectionStatus();
+                return;
+            }
+
+            const urls = resolveSpineUrls(version);
+            
+            if (!urls.atlasUrl) {
+                // 特殊情況：只有 .modfile 沒有 .atlas
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
+                        <div style="font-size:16px; margin-bottom:10px;">⚠️ 無法預覽</div>
+                        <div style="font-size:12px;">此 Mod 缺失必要檔案 (.atlas)</div>
+                    </div>
+                `;
+                hideLoading();
+                return;
+            }
+
+            if (!urls.jsonUrl && !urls.binaryUrl) {
+                hideLoading();
+                return;
+            }
+
+
+                spinePlayer = new spine.SpinePlayer("spinePlayer", {
+                    showControls: false,
+                    ...(urls.binaryUrl ? { binaryUrl: urls.binaryUrl } : {}),
+                    ...(urls.jsonUrl ? { jsonUrl: urls.jsonUrl } : {}),
+                    atlasUrl: urls.atlasUrl,
+                    backgroundColor: "#000000",
+                    preserveDrawingBuffer: true,
+                    premultipliedAlpha: true,
+                    alpha: true,
+                    viewport: cachedViewport || {
+                        x: 0,
+                        y: 0,
+                        width: 1,
+                        height: 1,
+                        padLeft: 0,
+                        padRight: 0,
+                        padTop: 50,
+                        padBottom: 50,
+                        transitionTime: 0,
+                        animations: {},
+                    },
+                    update: function() {
+                        if (manualCamera && spinePlayer) {
+                            const cam = spinePlayer.sceneRenderer.camera;
+                            cam.position.x = manualCamera.position.x;
+                            cam.position.y = manualCamera.position.y;
+                            cam.zoom = manualCamera.zoom;
+                            cam.update();
+                        }
+                    },
+                    success: function(player) {
+                        applyPlayerBackgroundTransparency(player);
+
+                        const skeleton = player.skeleton || null;
+                        skeleton?.setToSetupPose();
+                        skeleton?.updateWorldTransform();
+
+                        const skinNames = skeleton?.data.skins.map(s => s.name) || [];
+                        let bounds = null;
+                        let chosenSkin = '';
+
+                        if (skinNames.length) {
+                            for (const skinName of skinNames) {
+                                const test = applySkinAndMeasure(skeleton, skinName);
+                                if (isBoundsReasonable(test)) {
+                                    chosenSkin = skinName;
+                                    bounds = test;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!bounds) {
+                            bounds = computeCameraBounds(skeleton);
+                        }
+
+                if (bounds && isBoundsReasonable(bounds)) {
+                    updateViewportFromBounds(player, bounds, { target: 'A' });
+                }
+
+                const names = player.animationState?.data.skeletonData.animations.map(a => a.name) || [];
+
+
+                        animationList = names;
+                        renderAnimationOptions(names);
+                        setAnimationOptions(true);
+
+                        if (names.length) {
+                            const stored = getStoredAnimation(currentModId);
+                            const selected = stored && names.includes(stored) ? stored : names[0];
+                            setSpineAnimation(player, selected, { loop: true });
+                            const select = document.getElementById('animationSelect');
+                            if (select) {
+                                select.value = selected;
+                            }
+                            setStoredAnimation(currentModId, selected);
+
+                            // 同步重置 B 播放器的時間
+                            if (compareEnabled && spinePlayerB && spinePlayerB.animationState) {
+                                const stateB = spinePlayerB.animationState;
+                                const entryB = stateB.getCurrent(0);
+                                if (entryB) {
+                                    setSpineAnimation(spinePlayerB, entryB.animation.name, { loop: entryB.loop }, true);
+                                }
+                            }
+
+                            // 切換作者時同步相機狀態到左側（以右側為準）
+                            if (compareEnabled && manualCamera && manualCameraB) {
+                                manualCamera.position.x = manualCameraB.position.x;
+                                manualCamera.position.y = manualCameraB.position.y;
+                                manualCamera.zoom = manualCameraB.zoom;
+                                manualCamera.update();
+                            }
+                        }
+
+                        updateSelectionStatus();
+                        hideLoading();
+                        console.log('Loaded successfully');
+                    },
+                    error: function(player, msg) {
+                        showError('載入失敗: ' + msg);
+                    }
+                });
+
+            } catch (error) {
+                showError('載入 Mod 時發生錯誤: ' + error.message);
+            }
+        }
+
+        async function loadCompareVersion(mod) {
+            if (!compareEnabled) return;
+            const requestToken = compareLoadToken;
+
+            const versions = mod.versions;
+            if (!versions.length) {
+                hideLoading();
+                return;
+            }
+
+            if (currentCompareIndex >= versions.length) {
+                currentCompareIndex = 0;
+            }
+
+            const version = versions[currentCompareIndex];
+
+            if (spinePlayerB) {
+                safeDisposePlayer(spinePlayerB);
+                const container = document.getElementById('spinePlayerB');
+                if (container) container.innerHTML = '';
+            }
+
+            const container = document.getElementById('spinePlayerB');
+            if (container) container.innerHTML = '';
+
+            // 檢查是否為圖片類型 Mod
+            if (version.modType === 'image') {
+                renderImageMod(container, version);
+                hideLoading();
+                return;
+            }
+
+            const urls = resolveSpineUrls(version);
+            
+            if (!urls.atlasUrl) {
+                // 特殊情況：只有 .modfile 沒有 .atlas
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
+                        <div style="font-size:16px; margin-bottom:10px;">⚠️ 無法預覽</div>
+                        <div style="font-size:12px;">此 Mod 缺失必要檔案 (.atlas)</div>
+                    </div>
+                `;
+                hideLoading();
+                return;
+            }
+
+            if (!urls.jsonUrl && !urls.binaryUrl) {
+                hideLoading();
+                return;
+            }
+
+            spinePlayerB = new spine.SpinePlayer("spinePlayerB", {
+                showControls: false,
+                ...(urls.binaryUrl ? { binaryUrl: urls.binaryUrl } : {}),
+                ...(urls.jsonUrl ? { jsonUrl: urls.jsonUrl } : {}),
+                atlasUrl: urls.atlasUrl,
+                backgroundColor: "#1a1a2e",
+                preserveDrawingBuffer: true,
+                premultipliedAlpha: true,
+                alpha: true,
+                viewport: cachedViewportB || {
+                    x: 0,
+                    y: 0,
+                    width: 1,
+                    height: 1,
+                    padLeft: 0,
+                    padRight: 0,
+                    padTop: 50,
+                    padBottom: 50,
+                    transitionTime: 0,
+                    animations: {},
+                },
+                update: function() {
+                    if (manualCameraB && spinePlayerB) {
+                        const cam = spinePlayerB.sceneRenderer.camera;
+                        cam.position.x = manualCameraB.position.x;
+                        cam.position.y = manualCameraB.position.y;
+                        cam.zoom = manualCameraB.zoom;
+                        cam.update();
+                    }
+                },
+                success: function(player) {
+                    if (!compareEnabled || compareLoadToken !== requestToken) {
+                        safeDisposePlayer(player);
+                        return;
+                    }
+
+                    applyPlayerBackgroundTransparency(player);
+
+                    const skeleton = player.skeleton || null;
+                    skeleton?.setToSetupPose();
+                    skeleton?.updateWorldTransform();
+
+                    const skinNames = skeleton?.data.skins.map(s => s.name) || [];
+                    let bounds = null;
+                    let chosenSkin = '';
+
+                    if (skinNames.length) {
+                        for (const skinName of skinNames) {
+                            const test = applySkinAndMeasure(skeleton, skinName);
+                            if (isBoundsReasonable(test)) {
+                                chosenSkin = skinName;
+                                bounds = test;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!bounds) {
+                        bounds = computeCameraBounds(skeleton);
+                    }
+
+                    if (bounds && isBoundsReasonable(bounds)) {
+                        updateViewportFromBounds(player, bounds, { target: 'B' });
+                    }
+
+                    const names = player.animationState?.data.skeletonData.animations.map(a => a.name) || [];
+                    animationListB = names;
+                    const stored = getStoredAnimation(currentModId);
+                    const selected = stored && names.includes(stored) ? stored : names[0];
+                    if (selected) {
+                        setSpineAnimation(player, selected, { loop: true }, true);
+                    }
+
+                    hideLoading();
+                },
+                error: function(player, msg) {
+                    if (!compareEnabled || compareLoadToken !== requestToken) {
+                        safeDisposePlayer(player);
+                        return;
+                    }
+                    showError('載入失敗: ' + msg);
+                    hideLoading();
+                }
+            });
+        }
+
+
+
+
+        // 上一個版本
+        function previousVersion() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod || mod.versions.length <= 1) return;
+
+            currentVersionIndex = (currentVersionIndex - 1 + mod.versions.length) % mod.versions.length;
+            updateUI();
+            loadCurrentVersion();
+        }
+
+        function previousCompareVersion() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod || mod.versions.length <= 1) return;
+
+            currentCompareIndex = (currentCompareIndex - 1 + mod.versions.length) % mod.versions.length;
+            if (compareEnabled) {
+                loadCompareVersion(mod);
+            }
+        }
+
+
+        // 下一個版本
+        function nextVersion() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod || mod.versions.length <= 1) return;
+
+            currentVersionIndex = (currentVersionIndex + 1) % mod.versions.length;
+            updateUI();
+            loadCurrentVersion();
+        }
+
+        function nextCompareVersion() {
+            const mod = config.mods.find(m => m.id === currentModId);
+            if (!mod || mod.versions.length <= 1) return;
+
+            currentCompareIndex = (currentCompareIndex + 1) % mod.versions.length;
+            if (compareEnabled) {
+                loadCompareVersion(mod);
+            }
+        }
+
+
+        function populateAuthorFilter(authors) {
+            const select = document.getElementById('authorFilter');
+            if (!select) return;
+            const current = select.value;
+            select.innerHTML = '';
+            const allOption = document.createElement('option');
+            allOption.value = '';
+            allOption.textContent = '所有作者 (All Authors)';
+            select.appendChild(allOption);
+            authors.forEach(author => {
+                const option = document.createElement('option');
+                option.value = author;
+                option.textContent = author;
+                select.appendChild(option);
+            });
+            select.value = current;
+        }
+
+        function getFilteredMods() {
+            if (!config) return [];
+            const query = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+            const author = document.getElementById('authorFilter')?.value || '';
+            const selectedOnly = document.getElementById('selectedOnly')?.checked || false;
+            const newOnly = document.getElementById('newOnly')?.checked || false;
+
+            return config.mods.filter(mod => {
+                if (query && !mod.id.toLowerCase().includes(query)) {
+                    return false;
+                }
+                if (author && !mod.versions.some(v => v.author === author)) {
+                    return false;
+                }
+                const selected = getSelection(mod.id);
+                if (selectedOnly && !selected) {
+                    return false;
+                }
+                if (newOnly && !mod.isNew && !mod.isUpdated) {
+                    return false;
+                }
+                if (selected && typeof selected === 'object' && selected.versionId && !mod.versions.some(v => v.versionId === selected.versionId)) {
+                    return false;
+                }
+
+                return true;
+            }).map(mod => {
+                if (!author) return mod;
+                return {
+                    ...mod,
+                    versions: mod.versions.filter(v => v.author === author)
+                };
+            }).filter(mod => mod.versions.length > 0);
+        }
+
+        function applyFilters() {
+            const filtered = getFilteredMods();
+            renderModList(filtered);
+        }
+
+        // 搜尋
+        document.getElementById('searchInput').addEventListener('input', () => {
+            applyFilters();
+        });
+
+
+        document.getElementById('authorFilter').addEventListener('change', () => {
+            applyFilters();
+        });
+
+        document.getElementById('selectedOnly').addEventListener('change', () => {
+            applyFilters();
+        });
+
+        document.getElementById('newOnly')?.addEventListener('change', () => {
+            applyFilters();
+        });
+
+        document.getElementById('markAllReadBtn')?.addEventListener('click', async () => {
+             try {
+                const response = await fetch('/mark_all_read');
+                if (response.ok) {
+                    // Reload config and reapply filters to update UI
+                    const configResponse = await fetch('/mods_index.json');
+                    if (configResponse.ok) {
+                        config = await configResponse.json();
+                        applyFilters();  // Reapply current filters
+                        updateModListSelectionIndicators();
+                    }
+                } else {
+                    showError('Failed to mark all as read');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        });
+
+        document.getElementById('toggleSelectionBtn').addEventListener('click', () => {
+            if (!config || !currentModId) return;
+            const mod = config.mods.find(m => m.id === currentModId);
+            const version = mod?.versions?.[currentVersionIndex];
+            if (!version) return;
+
+            const versionId = version.versionId || version.author;
+            const selectedVersion = getSelection(mod.id);
+            const selectionVersionId = selectedVersion && typeof selectedVersion === 'object'
+                ? selectedVersion.versionId
+                : selectedVersion;
+
+            if (selectionVersionId === versionId) {
+                setSelection(mod.id, null);
+            } else {
+                setSelection(mod.id, {
+                    versionId,
+                    author: version.author,
+                    label: version.authorLabel || version.author,
+                    relativePath: version.relativePath || version.folderName || '',
+                });
+            }
+        });
+
+        document.getElementById('compareModeBtn').addEventListener('click', () => {
+            compareEnabled = !compareEnabled;
+            updateCompareUIState();
+            updateUI();
+            if (compareEnabled) {
+                manualCamera = null;
+                manualCameraB = null;
+                cachedViewport = null;
+                cachedViewportB = null;
+                const mod = config?.mods?.find(m => m.id === currentModId);
+                if (mod) {
+                    loadCompareVersion(mod);
+                }
+                loadCurrentVersion();
+            } else {
+                // Invalidate any in-flight compare loads
+                compareLoadToken += 1;
+
+                // Completely dispose Player B to free WebGL context/resources
+                if (spinePlayerB) {
+                    safeDisposePlayer(spinePlayerB);
+                    spinePlayerB = null;
+                }
+                const container = document.getElementById('spinePlayerB');
+                if (container) container.innerHTML = '';
+                compareLoadToken += 1;
+            }
+        });
+
+        document.getElementById('comparePrevBtn').addEventListener('click', () => {
+            previousCompareVersion();
+        });
+
+        document.getElementById('compareNextBtn').addEventListener('click', () => {
+            nextCompareVersion();
+        });
+
+        document.getElementById('compareVersionSelect').addEventListener('change', (event) => {
+            const value = Number(event.target.value || 0);
+            currentCompareIndex = Number.isFinite(value) ? value : 0;
+            const mod = config?.mods?.find(m => m.id === currentModId);
+            if (compareEnabled && mod) {
+                loadCompareVersion(mod);
+            }
+        });
+
+        document.getElementById('clearCurrentSelectionBtn').addEventListener('click', () => {
+            if (!currentModId) return;
+            const key = currentModId.toLowerCase();
+            delete modSelections[key];
+            updateSelectionStatus();
+            updateModListSelectionIndicators();
+            markPendingApply();
+            saveSelections();
+            console.log('clear current selection', currentModId);
+        });
+
+
+
+        document.getElementById('clearAllSelectionsBtn').addEventListener('click', () => {
+            modSelections = {};
+            updateSelectionStatus();
+            updateModListSelectionIndicators();
+            markPendingApply();
+            saveSelections();
+            console.log('all selections cleared');
+            document.querySelectorAll('.mod-batch-check:checked').forEach(chk => {
+                chk.checked = false;
+            });
+        });
+
+        const clearSelectedBtn = document.getElementById('clearSelectedBtn');
+        if (clearSelectedBtn) {
+            clearSelectedBtn.addEventListener('click', () => {
+                const checks = document.querySelectorAll('.mod-batch-check:checked');
+                if (checks.length === 0) return;
+
+                let changed = false;
+                checks.forEach(chk => {
+                    const modId = chk.getAttribute('data-mod-id');
+                    const key = modId ? modId.toLowerCase() : null;
+                    if (key && modSelections[key]) {
+                        delete modSelections[key];
+                        changed = true;
+                    }
+                    chk.checked = false;
+                });
+
+                if (changed) {
+                    updateSelectionStatus();
+                    updateModListSelectionIndicators();
+                    markPendingApply();
+                    saveSelections();
+                    console.log('clear selected selections');
+                }
+
+
+            });
+        }
+
+
+        document.getElementById('animationSelect').addEventListener('change', event => {
+            const value = event.target.value;
+            if (!spinePlayer || !value) return;
+            setSpineAnimation(spinePlayer, value, { loop: true });
+            if (compareEnabled && spinePlayerB) {
+                setSpineAnimation(spinePlayerB, value, { loop: true }, true);
+            }
+        });
+
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            if (!spinePlayer) return;
+            if (isPlaying) {
+                spinePlayer.pause();
+                isPlaying = false;
+                if (compareEnabled && spinePlayerB) {
+                    spinePlayerB.pause();
+                    isPlayingB = false;
+                }
+            } else {
+                spinePlayer.play();
+                isPlaying = true;
+                if (compareEnabled && spinePlayerB) {
+                    spinePlayerB.play();
+                    isPlayingB = true;
+                }
+            }
+            updatePlayPauseButton();
+        });
+
+        document.getElementById('resetCameraBtn').addEventListener('click', () => {
+            manualCamera = null;
+            cachedViewport = null;
+            if (compareEnabled) {
+                manualCameraB = null;
+                cachedViewportB = null;
+            }
+            loadCurrentVersion();
+            if (compareEnabled && currentModId && config) {
+                const mod = config.mods.find(m => m.id === currentModId);
+                if (mod) {
+                    loadCompareVersion(mod);
+                }
+            }
+        });
+
+        document.addEventListener('keydown', handleShortcutKey);
+
+        // 初始化
+        loadSelections().then(() => {
+            loadConfig();
+            updateCompareUIState();
+        });
+
+    </script>
+</body>
+</html>
