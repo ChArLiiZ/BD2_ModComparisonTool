@@ -1,49 +1,52 @@
 # BD2 Mod Comparison Tool
 
-BrownDust 2 本地 Mod 比較與管理工具。透過視覺化介面瀏覽、比較不同作者的 Mod 版本，並將選定的版本一鍵整合到輸出資料夾。
+**Language / 語言：** [English](README.md) | [日本語](README.ja.md) | [繁體中文](README.zh-TW.md)
 
-## 功能特色
+A local mod comparison and management tool for **BrownDust 2**. Browse, compare mod versions from different authors with a visual interface, and merge selected versions into an output folder with one click.
 
-- **自動掃描** — 遞迴掃描 `MODS/` 資料夾，自動辨識 Spine 動畫 Mod 與圖片替換 Mod
-- **多版本比較** — 同一角色若有多位作者的 Mod，可即時切換預覽
-- **Spine 動畫播放** — 內建 Spine Player，支援動畫選擇、播放/暫停、同步鏡頭
-- **選用管理** — 勾選想使用的 Mod 版本，支援搜尋、作者篩選、僅顯示已選
-- **一鍵套用** — 將選定的 Mod 版本自動複製到 `MODS_MERGED/` 整合資料夾
+## Features
 
-## 資料夾結構
+- **Auto Scan** — Recursively scans the `MODS/` folder, automatically detecting Spine animation mods and image replacement mods
+- **Multi-Version Comparison** — Instantly switch between previews when multiple authors have mods for the same character
+- **Spine Animation Playback** — Built-in Spine Player with animation selection, play/pause, and synchronized camera
+- **Selection Management** — Select desired mod versions with search, author filter, and "selected only" view
+- **One-Click Merge** — Automatically copies selected mod versions to the `MODS_MERGED/` output folder
+- **Multi-Language UI** — Interface supports English, Japanese, and Traditional Chinese
+
+## Folder Structure
 
 ```
 BD2_ModComparisonTool/
-├── start_tool.bat            # 啟動工具（雙擊執行）
-├── ModComparisonTools/       # 工具程式碼
-│   ├── mod_index_server.py   #   Python 後端伺服器
-│   ├── mod_viewer.html       #   前端介面（單一 HTML）
-│   └── vendor/               #   第三方函式庫（Spine Player）
-├── MODS/                     # Mod 來源（使用者自行放置）
-│   ├── 作者A/
-│   │   └── <mod 資料夾>/
-│   └── 作者B/
-│       └── <mod 資料夾>/
-└── MODS_MERGED/              # 整合輸出（工具自動產生）
+├── start_tool.bat            # Launch the tool (double-click)
+├── ModComparisonTools/       # Tool source code
+│   ├── mod_index_server.py   #   Python backend server
+│   ├── mod_viewer.html       #   Frontend UI (single HTML)
+│   └── vendor/               #   Third-party libraries (Spine Player)
+├── MODS/                     # Mod source (user-provided)
+│   ├── AuthorA/
+│   │   └── <mod folder>/
+│   └── AuthorB/
+│       └── <mod folder>/
+└── MODS_MERGED/              # Merged output (auto-generated)
 ```
 
-## 環境需求
+## Requirements
 
-- **Python 3.10+**（標準函式庫即可，無需額外套件）
-- 現代瀏覽器（Chrome / Edge / Firefox）
+- **Python 3.10+** (standard library only, no extra packages needed)
+- Modern browser (Chrome / Edge / Firefox)
 
-## 使用方式
+## Usage
 
-### 1. 放置 Mod
+### 1. Place Mods
 
-將 Mod 檔案依**作者名稱**分資料夾放入 `MODS/`：
+Organize mod files by **author name** inside `MODS/`:
 
 ```
 MODS/
 ├── AuthorA/
 │   └── SomeCharacter_Skin/
 │       ├── char000123.atlas
-│       ├── char000123.skel (或 .json)
+│       ├── char000123.skel (or .json)
 │       └── char000123.png
 └── AuthorB/
     └── SomeCharacter_AltSkin/
@@ -51,43 +54,45 @@ MODS/
         └── char000123.json
 ```
 
-**支援的 Mod 格式：**
-- **Spine Mod**：`.atlas` + `.skel` 或 `.json`
-- **圖片替換 Mod**：`.modfile` + `textures/*.png`
+**Supported mod formats:**
+- **Spine Mod**: `.atlas` + `.skel` or `.json`
+- **Image Replacement Mod**: `.modfile` + `textures/*.png`
 
-### 2. 啟動工具
+### 2. Launch the Tool
 
-雙擊根目錄的 `start_tool.bat`，瀏覽器會自動開啟介面。
+Double-click `start_tool.bat` in the root directory. The browser will open automatically.
 
-也可以手動啟動：
+You can also start manually:
 
 ```bash
 python ModComparisonTools/mod_index_server.py
-# 然後瀏覽 http://localhost:8000/ModComparisonTools/mod_viewer.html
+# Then open http://localhost:8000/ModComparisonTools/mod_viewer.html
 ```
 
-### 3. 操作介面
+### 3. Interface Guide
 
-| 功能 | 說明 |
-|------|------|
-| 搜尋 | 輸入 Mod ID 或角色關鍵字 |
-| 作者篩選 | 下拉選單篩選特定作者 |
-| 只顯示已選 | 僅列出已選用的 Mod |
-| 版本切換 | 點擊作者按鈕即時切換預覽 |
-| 動畫播放 | 選擇動作並播放 / 暫停 |
-| 選用 / 取消 | 決定是否使用此版本 |
+| Feature | Description |
+|---------|-------------|
+| Search | Enter Mod ID or character keywords |
+| Author Filter | Filter by specific author from dropdown |
+| Selected Only | Show only selected mods |
+| Version Switch | Click author buttons to switch preview |
+| Animation | Choose animation and play / pause |
+| Select / Deselect | Decide whether to use this version |
 
-### 4. 儲存與套用
+### 4. Save & Apply
 
-- **「儲存選擇」** — 將目前的選擇記錄到本機
-- **「套用選擇」** — 將選定版本的檔案複製到 `MODS_MERGED/` 資料夾，可直接供遊戲使用
+- **"Save Selections"** — Saves current selection records locally
+- **"Apply Selections"** — Copies selected version files to `MODS_MERGED/` folder, ready for game use
 
-## 注意事項
+## Notes
 
-- `MODS/` 和 `MODS_MERGED/` 不包含在本倉庫中，需自行放置 Mod 檔案
-- `MODS_MERGED/` 會在套用時自動建立
-- 同名 Mod 資料夾會被覆蓋更新
+- `MODS/` and `MODS_MERGED/` are not included in this repository; place your own mod files
+- `MODS_MERGED/` is created automatically when applying selections
+- Mod folders with the same name will be overwritten
 
-## 授權
+## License
 
-本工具僅供個人使用，Mod 素材版權歸原作者所有。
+MIT License — see [LICENSE](LICENSE) for details.
+
+Mod assets are copyrighted by their respective authors.

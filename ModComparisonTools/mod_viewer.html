@@ -395,26 +395,26 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search Mod ID...">
+                <input type="text" id="searchInput" placeholder="Search Mod ID..." data-i18n-placeholder="search_placeholder">
             </div>
         </div>
         <div class="filters">
             <select id="authorFilter" class="filter-select">
-                <option value="">All Authors</option>
+                <option value="" data-i18n="all_authors">All Authors</option>
             </select>
             <label class="checkbox-wrapper">
                 <input type="checkbox" id="selectedOnly">
-                <span>Selected Only</span>
+                <span data-i18n="selected_only">Selected Only</span>
             </label>
             <label class="checkbox-wrapper">
                 <input type="checkbox" id="newOnly">
-                <span>New/Updated Only</span>
+                <span data-i18n="new_updated_only">New/Updated Only</span>
             </label>
         </div>
         <div class="actions">
-            <button id="clearAllSelectionsBtn" class="btn-mini danger">Reset All</button>
-            <button id="markAllReadBtn" class="btn-mini">Mark All Read</button>
-            <button id="clearSelectedBtn" class="btn-mini">Clear Checked</button>
+            <button id="clearAllSelectionsBtn" class="btn-mini danger" data-i18n="reset_all">Reset All</button>
+            <button id="markAllReadBtn" class="btn-mini" data-i18n="mark_all_read">Mark All Read</button>
+            <button id="clearSelectedBtn" class="btn-mini" data-i18n="clear_checked">Clear Checked</button>
             <div style="font-size: 10px; color: #666; display: flex; align-items: center;">
                 SEL: <span id="selectedCount" style="margin-left: 4px; color: #fff;">0</span>
             </div>
@@ -428,9 +428,15 @@
     <div class="main-area">
         <!-- Top Header -->
         <div class="header">
-            <h1>MOD VIEWER</h1>
-            <div id="currentModInfo" class="current-mod-display">SELECT MOD</div>
-            <div style="width: 100px;"></div> <!-- Spacer -->
+            <h1 data-i18n="mod_viewer">MOD VIEWER</h1>
+            <div id="currentModInfo" class="current-mod-display" data-i18n="select_mod">SELECT MOD</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="langSelect" class="select-input" style="min-width: 80px; height: 28px; font-size: 11px;">
+                    <option value="en">EN</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh-TW">繁體中文</option>
+                </select>
+            </div>
         </div>
 
         <!-- Hero: Spine Player -->
@@ -452,36 +458,36 @@
             <div class="control-bar">
                 <!-- Group 1: Version Control -->
                 <div class="control-group">
-                    <span class="group-label">VERSION</span>
-                    <button class="btn" id="prevBtn" onclick="previousVersion()" title="Previous (Left Arrow)">←</button>
+                    <span class="group-label" data-i18n="version">VERSION</span>
+                    <button class="btn" id="prevBtn" onclick="previousVersion()" data-i18n-title="prev_tooltip" title="Previous (Left Arrow)">←</button>
                     <span id="versionInfo" class="info-text" style="min-width: 60px; text-align: center;">-</span>
-                    <button class="btn" id="nextBtn" onclick="nextVersion()" title="Next (Right Arrow)">→</button>
+                    <button class="btn" id="nextBtn" onclick="nextVersion()" data-i18n-title="next_tooltip" title="Next (Right Arrow)">→</button>
                     <div id="versionButtons" style="display: flex; gap: 4px;"></div>
                 </div>
 
                 <!-- Group 2: Animation -->
                 <div class="control-group">
-                    <span class="group-label">ANIM</span>
+                    <span class="group-label" data-i18n="anim">ANIM</span>
                     <select id="animationSelect" class="select-input" disabled></select>
                     <span id="animationCount" style="font-size: 10px; color: #666; min-width: 20px; text-align: center;">0</span>
-                    <button id="playPauseBtn" class="btn" disabled>Pause</button>
-                    <button id="resetCameraBtn" class="btn" disabled>Reset Cam</button>
+                    <button id="playPauseBtn" class="btn" disabled data-i18n="pause">Pause</button>
+                    <button id="resetCameraBtn" class="btn" disabled data-i18n="reset_cam">Reset Cam</button>
                 </div>
                 
                 <!-- Group 3: Selection (Right Aligned) -->
                 <div class="control-group" style="margin-left: auto;">
-                    <span id="currentSelectionStatus" class="status-indicator">Default</span>
-                    <button id="toggleSelectionBtn" class="btn primary">Select (Enter)</button>
-                    <button id="clearCurrentSelectionBtn" class="btn">Clear</button>
+                    <span id="currentSelectionStatus" class="status-indicator" data-i18n="default_status">Default</span>
+                    <button id="toggleSelectionBtn" class="btn primary" data-i18n="select_enter">Select (Enter)</button>
+                    <button id="clearCurrentSelectionBtn" class="btn" data-i18n="clear">Clear</button>
                 </div>
             </div>
             
             <!-- Compare Bar (Compact) -->
             <div class="control-bar" style="border-top: 1px solid #1a1a1a; background: #0e0e0e; padding-top: 4px; padding-bottom: 4px; min-height: 40px;">
                 <div class="control-group">
-                    <span class="group-label">COMPARE</span>
+                    <span class="group-label" data-i18n="compare">COMPARE</span>
                     <input type="checkbox" id="compareToggle" style="display: none;">
-                    <label for="compareToggle" id="compareModeBtn" class="compare-toggle-label">Enable Compare Mode</label>
+                    <label for="compareToggle" id="compareModeBtn" class="compare-toggle-label" data-i18n="enable_compare">Enable Compare Mode</label>
                     
                     <div style="width: 1px; height: 20px; background: #333; margin: 0 10px;"></div>
 
@@ -494,6 +500,195 @@
     </div>
 
     <script>
+        // ===== i18n 多語言系統 =====
+        const i18n = {
+            'en': {
+                // Sidebar
+                'search_placeholder': 'Search Mod ID...',
+                'all_authors': 'All Authors',
+                'selected_only': 'Selected Only',
+                'new_updated_only': 'New/Updated Only',
+                'reset_all': 'Reset All',
+                'mark_all_read': 'Mark All Read',
+                'clear_checked': 'Clear Checked',
+                // Header
+                'mod_viewer': 'MOD VIEWER',
+                'select_mod': 'SELECT MOD',
+                // Controls
+                'version': 'VERSION',
+                'anim': 'ANIM',
+                'pause': 'Pause',
+                'play': 'Play',
+                'reset_cam': 'Reset Cam',
+                'default_status': 'Default',
+                'select_enter': 'Select (Enter)',
+                'clear': 'Clear',
+                'compare': 'COMPARE',
+                'enable_compare': 'Enable Compare Mode',
+                'disable_compare': 'Disable Compare Mode',
+                'prev_tooltip': 'Previous (Left Arrow)',
+                'next_tooltip': 'Next (Right Arrow)',
+                // Dynamic strings
+                'no_animation': 'No Animation',
+                'config_load_error': 'Failed to load config: ',
+                'image_mod': 'Image Mod',
+                'no_images_found': 'No image files found',
+                'image_mod_count': 'Image Mod ({0} images)',
+                'save_failed_write': 'Save failed: Cannot write selections',
+                'save_failed_network': 'Save failed: Network error',
+                'selected_label': 'Selected: {0}',
+                'deselect_enter': 'Deselect (Enter)',
+                'select_version_enter': 'Select ({0}) (Enter)',
+                'not_selected': 'Not Selected (Default)',
+                'cannot_preview': 'Cannot Preview',
+                'missing_atlas': 'This mod is missing required files (.atlas)',
+                'load_failed': 'Load failed: ',
+                'load_error': 'Error loading mod: ',
+                'mark_read_failed': 'Failed to mark all as read',
+                'network_error': 'Network error: ',
+                'versions_info': '{0} versions: {1}',
+            },
+            'ja': {
+                // Sidebar
+                'search_placeholder': 'Mod IDを検索...',
+                'all_authors': 'すべての作者',
+                'selected_only': '選択済みのみ',
+                'new_updated_only': '新規/更新のみ',
+                'reset_all': 'すべてリセット',
+                'mark_all_read': 'すべて既読',
+                'clear_checked': 'チェック解除',
+                // Header
+                'mod_viewer': 'MODビューア',
+                'select_mod': 'MODを選択',
+                // Controls
+                'version': 'バージョン',
+                'anim': 'アニメ',
+                'pause': '一時停止',
+                'play': '再生',
+                'reset_cam': 'カメラリセット',
+                'default_status': 'デフォルト',
+                'select_enter': '選択 (Enter)',
+                'clear': 'クリア',
+                'compare': '比較',
+                'enable_compare': '比較モードを有効化',
+                'disable_compare': '比較モードを無効化',
+                'prev_tooltip': '前へ (←)',
+                'next_tooltip': '次へ (→)',
+                // Dynamic strings
+                'no_animation': 'アニメーションなし',
+                'config_load_error': '設定の読み込みに失敗: ',
+                'image_mod': '画像タイプMod',
+                'no_images_found': '画像ファイルが見つかりません',
+                'image_mod_count': '画像タイプMod ({0}枚)',
+                'save_failed_write': '保存失敗: 選択を書き込めません',
+                'save_failed_network': '保存失敗: ネットワークエラー',
+                'selected_label': '選択中: {0}',
+                'deselect_enter': '選択解除 (Enter)',
+                'select_version_enter': 'このバージョンを選択 ({0}) (Enter)',
+                'not_selected': '未選択 (デフォルト)',
+                'cannot_preview': 'プレビュー不可',
+                'missing_atlas': 'このModには必要なファイル (.atlas) がありません',
+                'load_failed': '読み込み失敗: ',
+                'load_error': 'Modの読み込みエラー: ',
+                'mark_read_failed': '既読にできませんでした',
+                'network_error': 'ネットワークエラー: ',
+                'versions_info': '{0}バージョン: {1}',
+            },
+            'zh-TW': {
+                // Sidebar
+                'search_placeholder': '搜尋 Mod ID...',
+                'all_authors': '所有作者',
+                'selected_only': '只顯示已選',
+                'new_updated_only': '只顯示 新增/更新',
+                'reset_all': '全部重設',
+                'mark_all_read': '全部標為已讀',
+                'clear_checked': '清除勾選',
+                // Header
+                'mod_viewer': 'MOD 檢視器',
+                'select_mod': '請選擇 MOD',
+                // Controls
+                'version': '版本',
+                'anim': '動畫',
+                'pause': '暫停',
+                'play': '播放',
+                'reset_cam': '重設鏡頭',
+                'default_status': '預設',
+                'select_enter': '選用 (Enter)',
+                'clear': '清除',
+                'compare': '比對',
+                'enable_compare': '開啟比對模式',
+                'disable_compare': '關閉比對模式',
+                'prev_tooltip': '上一個 (←)',
+                'next_tooltip': '下一個 (→)',
+                // Dynamic strings
+                'no_animation': '無動畫',
+                'config_load_error': '無法載入配置檔: ',
+                'image_mod': '圖片類型 Mod',
+                'no_images_found': '未找到圖片檔案',
+                'image_mod_count': '圖片類型 Mod ({0} 張)',
+                'save_failed_write': '儲存失敗: 無法寫入選擇',
+                'save_failed_network': '儲存失敗: 連線錯誤',
+                'selected_label': '已選用: {0}',
+                'deselect_enter': '取消選用 (Enter)',
+                'select_version_enter': '選用此版本 ({0}) (Enter)',
+                'not_selected': '未選用 (預設)',
+                'cannot_preview': '無法預覽',
+                'missing_atlas': '此 Mod 缺失必要檔案 (.atlas)',
+                'load_failed': '載入失敗: ',
+                'load_error': '載入 Mod 時發生錯誤: ',
+                'mark_read_failed': '無法標記為已讀',
+                'network_error': '網路錯誤: ',
+                'versions_info': '{0} 個版本: {1}',
+            }
+        };
+
+        let currentLang = localStorage.getItem('modviewer_lang') || 'zh-TW';
+
+        function t(key, ...args) {
+            const dict = i18n[currentLang] || i18n['en'];
+            let str = dict[key] || i18n['en'][key] || key;
+            args.forEach((arg, i) => {
+                str = str.replace(`{${i}}`, arg);
+            });
+            return str;
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('modviewer_lang', lang);
+
+            // Update elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                // Skip currentModInfo if a mod is already loaded
+                if (el.id === 'currentModInfo' && currentModId) return;
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            // Update elements with data-i18n-placeholder
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+            // Update elements with data-i18n-title
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = t(key);
+            });
+
+            // Re-render dynamic parts
+            if (config) {
+                populateAuthorFilter(config.authors || []);
+                applyFilters();
+            }
+            updatePlayPauseButton();
+            updateCompareUIState();
+            updateSelectionStatus();
+
+            // Update language selector
+            const langSelect = document.getElementById('langSelect');
+            if (langSelect) langSelect.value = lang;
+        }
+
         let config = null;
         let currentModId = null;
         let currentVersionIndex = 0;
@@ -537,7 +732,7 @@
                 renderModList(config.mods || []);
                 updateModListSelectionIndicators();
             } catch (error) {
-                showError('無法載入配置檔: ' + error.message);
+                showError(t('config_load_error') + error.message);
             }
         }
 
@@ -868,8 +1063,8 @@
             if (pngs.length === 0) {
                 container.innerHTML = `
                     <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
-                        <div style="font-size:16px; margin-bottom:10px;">📷 圖片類型 Mod</div>
-                        <div style="font-size:12px;">未找到圖片檔案</div>
+                        <div style="font-size:16px; margin-bottom:10px;">📷 ${t('image_mod')}</div>
+                        <div style="font-size:12px;">${t('no_images_found')}</div>
                     </div>
                 `;
                 return;
@@ -888,7 +1083,7 @@
 
             container.innerHTML = `
                 <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; overflow:auto; padding:20px;">
-                    <div style="color:#666; font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">📷 圖片類型 Mod (${pngs.length} 張)</div>
+                    <div style="color:#666; font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">📷 ${t('image_mod_count', pngs.length)}</div>
                     <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px;">
                         ${imageHtml}
                     </div>
@@ -953,13 +1148,13 @@
                 });
                 if (!response.ok) {
                     console.error('apply_selections failed', response.status);
-                    showError('儲存失敗: 無法寫入選擇');
+                    showError(t('save_failed_write'));
                 } else {
                     console.log('apply_selections ok', payload);
                 }
             } catch (error) {
                 console.error('apply_selections error', error);
-                showError('儲存失敗: 連線錯誤');
+                showError(t('save_failed_network'));
             }
         }
 
@@ -1008,7 +1203,7 @@
             if (!names.length) {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = '無動畫';
+                option.textContent = t('no_animation');
                 select.appendChild(option);
                 return;
             }
@@ -1058,19 +1253,19 @@
                 : selectedVersion === versionId;
 
             if (isSelected) {
-                statusEl.textContent = `已選用: ${label}`;
+                statusEl.textContent = t('selected_label', label);
                 statusEl.classList.add('selected');
-                toggleBtn.textContent = '取消選用 (Enter)';
+                toggleBtn.textContent = t('deselect_enter');
                 toggleBtn.classList.add('active');
             } else if (selectedVersion) {
-                statusEl.textContent = `已選用: ${selectionLabel}`;
+                statusEl.textContent = t('selected_label', selectionLabel);
                 statusEl.classList.remove('selected');
-                toggleBtn.textContent = `選用此版本 (${label}) (Enter)`;
+                toggleBtn.textContent = t('select_version_enter', label);
                 toggleBtn.classList.remove('active');
             } else {
-                statusEl.textContent = '未選用 (預設)';
+                statusEl.textContent = t('not_selected');
                 statusEl.classList.remove('selected');
-                toggleBtn.textContent = `選用此版本 (${label}) (Enter)`;
+                toggleBtn.textContent = t('select_version_enter', label);
                 toggleBtn.classList.remove('active');
             }
         }
@@ -1164,7 +1359,7 @@
         function updatePlayPauseButton() {
             const playPauseBtn = document.getElementById('playPauseBtn');
             if (!playPauseBtn) return;
-            playPauseBtn.textContent = isPlaying ? '暫停' : '播放';
+            playPauseBtn.textContent = isPlaying ? t('pause') : t('play');
         }
 
         function updateCompareUIState() {
@@ -1179,8 +1374,8 @@
             if (toggle) {
                 toggle.classList.toggle('active', compareEnabled);
                 toggle.textContent = compareEnabled
-                    ? '關閉比對模式 (Compare Mode)'
-                    : '開啟比對模式 (Compare Mode)';
+                    ? t('disable_compare')
+                    : t('enable_compare');
             }
         }
 
@@ -1262,7 +1457,7 @@
                     <input type="checkbox" class="mod-batch-check" data-mod-id="${mod.id}" onclick="event.stopPropagation()">
                     <div class="mod-info-col">
                         <div class="mod-id">${mod.id}${badges}</div>
-                        <div class="mod-versions">${mod.versions.length} versions: ${authors}</div>
+                        <div class="mod-versions">${t('versions_info', mod.versions.length, authors)}</div>
                     </div>
                 `;
 
@@ -1408,8 +1603,8 @@
                 // 特殊情況：只有 .modfile 沒有 .atlas
                 container.innerHTML = `
                     <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
-                        <div style="font-size:16px; margin-bottom:10px;">⚠️ 無法預覽</div>
-                        <div style="font-size:12px;">此 Mod 缺失必要檔案 (.atlas)</div>
+                        <div style="font-size:16px; margin-bottom:10px;">⚠️ ${t('cannot_preview')}</div>
+                        <div style="font-size:12px;">${t('missing_atlas')}</div>
                     </div>
                 `;
                 hideLoading();
@@ -1522,12 +1717,12 @@
                         console.log('Loaded successfully');
                     },
                     error: function(player, msg) {
-                        showError('載入失敗: ' + msg);
+                        showError(t('load_failed') + msg);
                     }
                 });
 
             } catch (error) {
-                showError('載入 Mod 時發生錯誤: ' + error.message);
+                showError(t('load_error') + error.message);
             }
         }
 
@@ -1569,8 +1764,8 @@
                 // 特殊情況：只有 .modfile 沒有 .atlas
                 container.innerHTML = `
                     <div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; color:#888;">
-                        <div style="font-size:16px; margin-bottom:10px;">⚠️ 無法預覽</div>
-                        <div style="font-size:12px;">此 Mod 缺失必要檔案 (.atlas)</div>
+                        <div style="font-size:16px; margin-bottom:10px;">⚠️ ${t('cannot_preview')}</div>
+                        <div style="font-size:12px;">${t('missing_atlas')}</div>
                     </div>
                 `;
                 hideLoading();
@@ -1662,7 +1857,7 @@
                         safeDisposePlayer(player);
                         return;
                     }
-                    showError('載入失敗: ' + msg);
+                    showError(t('load_failed') + msg);
                     hideLoading();
                 }
             });
@@ -1720,7 +1915,7 @@
             select.innerHTML = '';
             const allOption = document.createElement('option');
             allOption.value = '';
-            allOption.textContent = '所有作者 (All Authors)';
+            allOption.textContent = t('all_authors');
             select.appendChild(allOption);
             authors.forEach(author => {
                 const option = document.createElement('option');
@@ -1801,10 +1996,10 @@
                         updateModListSelectionIndicators();
                     }
                 } else {
-                    showError('Failed to mark all as read');
+                    showError(t('mark_read_failed'));
                 }
             } catch (error) {
-                showError('Network error: ' + error.message);
+                showError(t('network_error') + error.message);
             }
         });
 
@@ -1980,7 +2175,13 @@
 
         document.addEventListener('keydown', handleShortcutKey);
 
+        // 語言切換器
+        document.getElementById('langSelect').addEventListener('change', (event) => {
+            applyLanguage(event.target.value);
+        });
+
         // 初始化
+        applyLanguage(currentLang);
         loadSelections().then(() => {
             loadConfig();
             updateCompareUIState();
