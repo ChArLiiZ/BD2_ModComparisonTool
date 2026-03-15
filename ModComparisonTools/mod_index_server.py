@@ -17,6 +17,7 @@ MODS_DIR = BASE_DIR / "MODS"
 MERGED_DIR = BASE_DIR / "MODS_MERGED"
 SELECTIONS_FILE = SCRIPT_DIR / "mod_selections.json"
 HISTORY_FILE = SCRIPT_DIR / "mod_history.json"
+SETTINGS_FILE = SCRIPT_DIR / "mod_settings.json"
 
 
 def find_mod_ids_in_folder(folder: Path) -> list[str]:
@@ -138,6 +139,24 @@ def save_history(history: dict) -> None:
         HISTORY_FILE.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception as e:
         print(f"Error saving history: {e}")
+
+
+def load_settings() -> dict:
+    if not SETTINGS_FILE.exists():
+        return {}
+    try:
+        content = SETTINGS_FILE.read_text(encoding="utf-8")
+        return json.loads(content)
+    except Exception:
+        return {}
+
+
+def save_settings(settings: dict) -> None:
+    try:
+        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SETTINGS_FILE.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"Error saving settings: {e}")
 
 
 def find_file_case_insensitive(folder: Path, filename: str) -> Path | None:
@@ -326,28 +345,14 @@ def _robust_rmtree(path: Path, max_retries: int = 3, delay: float = 0.5) -> None
                 raise
 
 
-def merge_selected_mods(selections: dict[str, dict]) -> None:
-    MERGED_DIR.mkdir(parents=True, exist_ok=True)
-    if not MODS_DIR.exists():
-        return
+def _copy_mods_to_directory(target_dir: Path, selections: dict[str, tuple[str, dict]]) -> None:
+    """Copy selected mod folders to a target directory, removing orphans."""
+    target_dir.mkdir(parents=True, exist_ok=True)
+    active_folders: set[str] = set()
 
-    # Track which folder names should exist in MODS_MERGED
-    active_folders = set()
-    
-    # Deduplicate selections by lowercase mod_id (keep the last one)
-    # This handles cases where the same mod ID appears with different cases
-    normalized_selections: dict[str, tuple[str, dict]] = {}
-    for mod_id, selection in selections.items():
-        mod_id_lower = mod_id.lower()
-        normalized_selections[mod_id_lower] = (mod_id, selection)
-
-    for mod_id_lower, (mod_id, selection) in normalized_selections.items():
+    for mod_id_lower, (mod_id, selection) in selections.items():
         author = selection.get("author")
         relative_path = selection.get("relativePath")
-        # Ensure we have folderName stored in selection, OR re-derive it
-        # Wait, frontend sends {versionId, author, label, relativePath}. It might NOT send folderName.
-        # But relativePath includes the leaf folder name at the end.
-        
         if not author or not relative_path:
             continue
 
@@ -362,23 +367,45 @@ def merge_selected_mods(selections: dict[str, dict]) -> None:
         folder_name = source_folder.name
         active_folders.add(folder_name)
 
-        destination = MERGED_DIR / folder_name
+        destination = target_dir / folder_name
         if destination.exists():
-            # If it already exists, we might need to overwrite it IF it's different.
-            # Simple approach: Always remove and re-copy to ensure it matches current selection.
-            # Optimization: Check if source and dest match? No, just copy.
             _robust_rmtree(destination)
 
         shutil.copytree(source_folder, destination)
 
-    # Clean up orphan folders in MODS_MERGED
-    for item in MERGED_DIR.iterdir():
+    # Clean up orphan folders
+    for item in target_dir.iterdir():
         if item.is_dir() and item.name not in active_folders:
             try:
                 _robust_rmtree(item)
                 print(f"Removed orphan folder: {item.name}")
             except Exception as e:
                 print(f"Failed to remove orphan folder {item.name}: {e}")
+
+
+def merge_selected_mods(selections: dict[str, dict]) -> None:
+    if not MODS_DIR.exists():
+        return
+
+    # Deduplicate selections by lowercase mod_id (keep the last one)
+    normalized_selections: dict[str, tuple[str, dict]] = {}
+    for mod_id, selection in selections.items():
+        mod_id_lower = mod_id.lower()
+        normalized_selections[mod_id_lower] = (mod_id, selection)
+
+    # Always copy to MODS_MERGED
+    _copy_mods_to_directory(MERGED_DIR, normalized_selections)
+
+    # Also copy to game folder if configured
+    settings = load_settings()
+    game_path = settings.get("gamePath", "").strip()
+    if game_path:
+        game_dir = Path(game_path)
+        if game_dir.is_dir():
+            _copy_mods_to_directory(game_dir, normalized_selections)
+            print(f"Also copied mods to game folder: {game_dir}")
+        else:
+            print(f"Game folder does not exist, skipping: {game_dir}")
 
 
 class ModIndexHandler(SimpleHTTPRequestHandler):
@@ -404,6 +431,15 @@ class ModIndexHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
             return
+        if parsed.path == "/settings":
+            settings = load_settings()
+            content = json.dumps(settings, ensure_ascii=False, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+            return
         if parsed.path == "/mark_all_read":
             config = build_config()
             history = {}
@@ -422,6 +458,37 @@ class ModIndexHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+
+        if parsed.path == "/settings":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length)
+            try:
+                new_settings = json.loads(body.decode("utf-8"))
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            # Validate gamePath if provided
+            game_path = new_settings.get("gamePath", "").strip()
+            path_valid = True
+            if game_path:
+                path_valid = Path(game_path).is_dir()
+
+            settings = load_settings()
+            settings.update(new_settings)
+            if game_path:
+                settings["gamePath"] = game_path
+            save_settings(settings)
+
+            response = json.dumps({"status": "ok", "pathValid": path_valid}, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response)
+            return
+
         if parsed.path != "/apply_selections":
             self.send_response(404)
             self.end_headers()
